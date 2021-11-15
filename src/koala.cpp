@@ -70,6 +70,16 @@ koala_bot::run(){
 }
 
 void
+koala_bot::slowCallBack(const ros::TimerEvent&){
+
+    getStatus();
+}
+void
+koala_bot::fastCallBack(const ros::TimerEvent&){
+        getCurrentPose();
+        //readSpeed();    
+}
+void
 koala_bot::stop(){
     setSpeed(0,0);
 }
@@ -77,9 +87,13 @@ koala_bot::stop(){
 void
 koala_bot::configureROSComms(){
 
-
+    status_pub_ = n_.advertise<std_msgs::Float32MultiArray>("status",5);
     joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
     vel_cmd_sub_ = n_.subscribe("/cmd_vel",100,&koala_bot::velCmdCallBack,this);
+    timer_slow_ = n_.createTimer(ros::Duration(0.5),&koala_bot::slowCallBack,this);
+    timer_fast_ = n_.createTimer(ros::Duration(0.05),&koala_bot::fastCallBack,this);
+
+    
 
 }
 void
@@ -297,17 +311,25 @@ koala_bot::getStatus(){
 
         clock_gettime(CLOCK_MONOTONIC,&current_time_);
 
+        std_msgs::Float32MultiArray msg;
+
       //  status_msg_.header.stamp.sec = current_time_.tv_sec;
       //  status_msg_.header.stamp.nsec = current_time_.tv_nsec;
-      //  status_msg_.battery_voltage = 20.0*data[0]/1000.0; //20mV per integer converted to volts
-      //  status_msg_.current_consumption = 8.0*data[1]; // Converted to mA
-      //  status_msg_.ambient_temp = ((9/5)*(0.1*data[2]))+32; // temperature in degrees F
-     //   status_msg_.left_motor_current = 4*data[3];
-     //   status_msg_.right_motor_current = 4*data[4];
-     //   status_msg_.battery_temp = ((9/5)*(0.1*data[5]))+32;
+        float battery_voltage = 20.0*data[0]/1000.0; //20mV per integer converted to volts
+        float current_consumption = 8.0*data[1]; // Converted to mA
+        float ambient_temp = ((9/5)*(0.1*data[2]))+32; // temperature in degrees F
+        float left_motor_current = 4*data[3];
+        float right_motor_current = 4*data[4];
+        float battery_temp = ((9/5)*(0.1*data[5]))+32;
 
+        msg.data.push_back(battery_voltage);
+        msg.data.push_back(battery_temp);
+        msg.data.push_back(current_consumption);
+        msg.data.push_back(left_motor_current);
+        msg.data.push_back(right_motor_current);
+        msg.data.push_back(ambient_temp);
 
-      //  status_pub_.publish(status_msg_);
+        status_pub_.publish(msg);
     }
 
 }

@@ -14,7 +14,7 @@ int main(int argc, char **argv){
 
     ros::Rate loop_rate(1000);
     while(ros::ok()){
-        my_koala->run();
+       // my_koala->run();
 
         ros::spinOnce();// Allow ROS to check for new ROS Messages
         loop_rate.sleep(); //Sleep for some amount of time determined by loop_rate
