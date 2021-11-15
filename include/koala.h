@@ -23,6 +23,7 @@
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Twist.h"
+#include "std_msgs/Float32MultiArray.h"
 
 
 #include "ros/ros.h"
@@ -58,6 +59,9 @@ private:
     bool configurePosition_Controller(int Kp,int Ki,int Kd);
     bool configureSpeedProfile(int left_max_speed,int left_accel,int right_max_speed,int right_accel);
 
+    void slowCallBack(const ros::TimerEvent&);
+    void fastCallBack(const ros::TimerEvent&);
+
     //Set robot state function Prototypes
     bool setDesiredPosition(int left_pos,int right_pos);
     bool setSpeed(int left_motor,int right_motor);
@@ -92,8 +96,12 @@ private:
     ros::Publisher status_pub_;
     ros::Publisher pose_pub_;
     ros::Publisher prox_pub_;
+
+    
     ros::Subscriber vel_cmd_sub_;
     ros::Subscriber joy_cmd_sub_;
+    ros::Timer timer_slow_;
+    ros::Timer timer_fast_;
 
     float LX_,LY_,LT_,RX_,RY_,RT_,DPX_,DPY_;
     bool BA_,BB_,BX_,BY_;
