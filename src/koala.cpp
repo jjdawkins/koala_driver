@@ -78,7 +78,7 @@ koala_bot::configureROSComms(){
 
 
     joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
-    vel_cmd_sub_ = n_.subscribe("/vel_cmd",100,&koala_bot::velCmdCallBack,this);
+    vel_cmd_sub_ = n_.subscribe("/cmd_vel",100,&koala_bot::velCmdCallBack,this);
 
 }
 void
@@ -157,7 +157,7 @@ koala_bot::setSpeed(int left_motor,int right_motor){
     if(left_motor>127){
         left_motor = 127;
     }
-    
+
     if(left_motor<-127){
         left_motor = -127;
     }
@@ -345,9 +345,9 @@ void koala_bot::velCmdCallBack(const geometry_msgs::Twist &msg){
     int speed_R = (yaw_rate*(1/WHEEL_BASE) + velocity)*(1000/4.5);
 
     printf("Left Cmd: %d ; Right Cmd: %d\n",speed_L,speed_R);
-    
+
     setSpeed(speed_L,speed_R);
-    
+
 
 
 }
