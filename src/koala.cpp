@@ -12,6 +12,7 @@ void
 koala_bot::initialize(){
 
     my_serial_.setStopbits(serial::stopbits_two);
+    my_serial_.setFlowcontrol(serial::flowcontrol_none);
     my_serial_.setBaudrate(baud_);
     my_serial_.setPort(port_);
 
