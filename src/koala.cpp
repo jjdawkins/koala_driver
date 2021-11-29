@@ -93,7 +93,7 @@ koala_bot::configureROSComms(){
    // joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
     vel_cmd_sub_ = n_.subscribe("/cmd_vel",100,&koala_bot::velCmdCallBack,this);
     timer_slow_ = n_.createTimer(ros::Duration(0.5),&koala_bot::slowCallBack,this);
-    timer_fast_ = n_.createTimer(ros::Duration(0.05),&koala_bot::fastCallBack,this);
+    timer_fast_ = n_.createTimer(ros::Duration(0.1),&koala_bot::fastCallBack,this);
 
     
 
