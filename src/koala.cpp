@@ -353,14 +353,14 @@ void koala_bot::readProximitySensors(){
             result.push_back(substr);
         }
     
-        std_msgs::Int32MultiArray msg;
+        std_msgs::Int32MultiArray prox_msg;
         for(int i = 1; i<result.size(); i++) {    //print all splitted strings
           //  cout << result.at(i) << endl;
-            msg.data.push_back(atoi(result.at(i).c_str()));
+            prox_msg.data.push_back(atoi(result.at(i).c_str()));
         }    
         
         
-        prox_pub_.publish(msg);
+        prox_pub_.publish(prox_msg);
 
       //  pose_msg_.velocity = 0.5*(4.5*(left_vel + right_vel))/1000;
       //  pose_msg_.yaw_rate = (1/WHEEL_BASE)*((4.5*(left_vel-right_vel))/1000);
