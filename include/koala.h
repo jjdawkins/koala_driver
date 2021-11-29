@@ -23,6 +23,7 @@
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Twist.h"
+#include "std_msgs/Int32MultiArray.h"
 #include "std_msgs/Float32MultiArray.h"
 
 
@@ -107,6 +108,7 @@ private:
     bool BA_,BB_,BX_,BY_;
     int speed_L_,speed_R_;
     bool dual_drive_;
+    
 };
 
 #endif

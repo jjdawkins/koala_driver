@@ -77,6 +77,7 @@ koala_bot::slowCallBack(const ros::TimerEvent&){
 void
 koala_bot::fastCallBack(const ros::TimerEvent&){
         getCurrentPose();
+        readProximitySensors();
         //readSpeed();    
 }
 void
@@ -87,8 +88,9 @@ koala_bot::stop(){
 void
 koala_bot::configureROSComms(){
 
-    status_pub_ = n_.advertise<std_msgs::Float32MultiArray>("status",5);
-    joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
+    status_pub_ = n_.advertise<std_msgs::Float32MultiArray>("/status",5);
+    prox_pub_ = n_.advertise<std_msgs::Int32MultiArray>("/proximity",5);
+   // joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
     vel_cmd_sub_ = n_.subscribe("/cmd_vel",100,&koala_bot::velCmdCallBack,this);
     timer_slow_ = n_.createTimer(ros::Duration(0.5),&koala_bot::slowCallBack,this);
     timer_fast_ = n_.createTimer(ros::Duration(0.05),&koala_bot::fastCallBack,this);
@@ -337,7 +339,37 @@ void
 koala_bot::getBatteryStatus(){}
 
 // Sensor Reading Prototypes
-void koala_bot::readProximitySensors(){}
+void koala_bot::readProximitySensors(){
+        my_serial_.write("N\n");
+    string my_str = my_serial_.readline();
+
+    if(my_str.size()>0){
+
+        vector<string> result;
+        stringstream s_stream(my_str); //create string stream from the string
+        while(s_stream.good()) {
+            string substr;
+            getline(s_stream, substr, ','); //get first string delimited by comma
+            result.push_back(substr);
+        }
+    
+        std_msgs::Int32MultiArray msg;
+        for(int i = 1; i<result.size(); i++) {    //print all splitted strings
+          //  cout << result.at(i) << endl;
+            msg.data.push_back(atoi(result.at(i).c_str()));
+        }    
+        
+        
+        prox_pub_.publish(msg);
+
+      //  pose_msg_.velocity = 0.5*(4.5*(left_vel + right_vel))/1000;
+      //  pose_msg_.yaw_rate = (1/WHEEL_BASE)*((4.5*(left_vel-right_vel))/1000);
+
+    }
+
+    
+    
+}
 void koala_bot::readLightSensors(){}
 void koala_bot::read_ADC(int channel){}
 
