@@ -76,7 +76,7 @@ koala_bot::slowCallBack(const ros::TimerEvent&){
 }
 void
 koala_bot::fastCallBack(const ros::TimerEvent&){
-        getCurrentPose();
+       // getCurrentPose();
         readProximitySensors();
         //readSpeed();    
 }
