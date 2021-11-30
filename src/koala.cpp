@@ -359,9 +359,9 @@ void koala_bot::readProximitySensors(){
             prox_msg.data.push_back(atoi(result.at(i).c_str()));
         }    
         
-        
-        prox_pub_.publish(prox_msg);
-
+        if(result.size()>15){
+            prox_pub_.publish(prox_msg);
+        }
       //  pose_msg_.velocity = 0.5*(4.5*(left_vel + right_vel))/1000;
       //  pose_msg_.yaw_rate = (1/WHEEL_BASE)*((4.5*(left_vel-right_vel))/1000);
 
