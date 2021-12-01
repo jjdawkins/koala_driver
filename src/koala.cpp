@@ -396,8 +396,8 @@ void koala_bot::velCmdCallBack(const geometry_msgs::Twist &msg){
         yaw_rate = msg.angular.z;
     }
 
-    int speed_L = (-yaw_rate*(1/WHEEL_BASE) + velocity)*(1000/4.5); //Calculate desired wheel velocities and convert to
-    int speed_R = (yaw_rate*(1/WHEEL_BASE) + velocity)*(1000/4.5);
+    int speed_L = (-(0.5*yaw_rate*WHEEL_BASE) + velocity)*(1000/4.5); //Calculate desired wheel velocities and convert to
+    int speed_R = ((0.5*yaw_rate*WHEEL_BASE) + velocity)*(1000/4.5);
 
     printf("Left Cmd: %d ; Right Cmd: %d\n",speed_L,speed_R);
 
