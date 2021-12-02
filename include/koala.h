@@ -11,15 +11,8 @@
 #define FAST_LOOP_FREQ 20
 #define WHEEL_BASE 0.3 //m
 #define MAX_SPEED (128*4.5/1000) //max linear speed in m/s
-#define MAX_YAW_RATE MAX_SPEED/(WHEEL_BASE)
+#define MAX_YAW_RATE 1.57 // pi/2 /s
 
-//#include <koala/KoalaPose.h>
-//#include <koala/KoalaProximity.h>
-//#include <koala/KoalaStatus.h>
-//#include <ugv_cmd_msgs/Joystick.h>
-//#include <ugv_cmd_msgs/SkidSteer.h>
-//#include "sensor_msgs/"
-//#include "sensor_msgs/NavSatFix.h"
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Twist.h"
@@ -43,13 +36,8 @@ public:
 
 
     void initialize();
-    void run();
     void stop();
     Serial my_serial_;
-    struct timespec current_time_;
-    struct timespec start_time_;
-    struct timespec slow_timer_;
-    struct timespec fast_timer_;
 
     int test_speed_;
 
@@ -107,7 +95,9 @@ private:
     float LX_,LY_,LT_,RX_,RY_,RT_,DPX_,DPY_;
     bool BA_,BB_,BX_,BY_;
     int speed_L_,speed_R_;
-    bool dual_drive_;
+    bool armed;
+    float max_speed;
+    float max_yawrate;
     
 };
 
