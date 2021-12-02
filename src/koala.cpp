@@ -34,39 +34,11 @@ koala_bot::initialize(){
         ROS_ERROR("Serial Port was Unable to Open, check port settings and Koala mode knob");
     }
 
-    clock_gettime(CLOCK_MONOTONIC, &start_time_);
-    clock_gettime(CLOCK_MONOTONIC, &slow_timer_);
-    clock_gettime(CLOCK_MONOTONIC, &fast_timer_);
-
-    dual_drive_ = true;
+    armed = true;
 
     test_speed_ = 0;
     setPositionCounter(0,0); //zero out position counter
-    //setSpeed(10,0);
 
-    //setPWM(100,100);
-
-}
-
-void
-koala_bot::run(){
-
-    clock_gettime(CLOCK_MONOTONIC,&current_time_);
-
-    if(diff_ms(current_time_,slow_timer_)>=(1/SLOW_LOOP_FREQ)*1000){
-
-        getStatus();
-        clock_gettime(CLOCK_MONOTONIC, &slow_timer_);
-
-    }
-
-    if(diff_ms(current_time_,fast_timer_)>=(1/FAST_LOOP_FREQ)*1000){
-
-        getCurrentPose();
-        //readSpeed();
-        clock_gettime(CLOCK_MONOTONIC, &fast_timer_);
-
-    }
 }
 
 void
@@ -88,14 +60,16 @@ koala_bot::stop(){
 void
 koala_bot::configureROSComms(){
 
+    
+    n_.param<float>("max_speed",max_speed,MAX_SPEED);
+    n_.param<float>("max_yawrate",max_yawrate,MAX_YAW_RATE);
+    
     status_pub_ = n_.advertise<std_msgs::Float32MultiArray>("/status",5);
     prox_pub_ = n_.advertise<std_msgs::Int32MultiArray>("/proximity",5);
-   // joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
+    joy_cmd_sub_ = n_.subscribe("/joy",100,&koala_bot::joyCmdCallBack,this);
     vel_cmd_sub_ = n_.subscribe("/cmd_vel",100,&koala_bot::velCmdCallBack,this);
-    timer_slow_ = n_.createTimer(ros::Duration(0.5),&koala_bot::slowCallBack,this);
-    timer_fast_ = n_.createTimer(ros::Duration(0.1),&koala_bot::fastCallBack,this);
-
-    
+    timer_slow_ = n_.createTimer(ros::Duration(2.0),&koala_bot::slowCallBack,this);
+    timer_fast_ = n_.createTimer(ros::Duration(0.2),&koala_bot::fastCallBack,this);    
 
 }
 void
@@ -149,7 +123,7 @@ koala_bot::configureSpeedProfile(int left_max_speed,
                                  int left_accel,
                                  int right_max_speed,
                                  int right_accel){
-    char msg[10];
+    char msg[24];
     sprintf(msg,"J,%d,%d,%d,%d\n",left_max_speed,left_accel,right_max_speed,right_accel);
     my_serial_.write(msg);
 
@@ -171,23 +145,26 @@ bool
 koala_bot::setSpeed(int left_motor,int right_motor){
     char msg[10];
 
-    if(left_motor>127){
-        left_motor = 127;
-    }
+    if(armed){
+        if(left_motor>127){
+            left_motor = 127;
+        }
 
-    if(left_motor<-127){
-        left_motor = -127;
-    }
+        if(left_motor<-127){
+            left_motor = -127;
+        }
 
-
-    if(right_motor>127){
-        right_motor = 127;
+        if(right_motor>127){
+            right_motor = 127;
+        }
+        if(right_motor<-127){
+            right_motor = -127;
+        }
+        sprintf(msg,"D,%d,%d\n",left_motor,right_motor);
+    }else{
+        sprintf(msg,"D,%d,%d\n",0,0);    
     }
-    if(right_motor<-127){
-        right_motor = -127;
-    }
-
-    sprintf(msg,"D,%d,%d\n",left_motor,right_motor);
+    
     my_serial_.write(msg);
 
     string ack = my_serial_.readline();
@@ -257,10 +234,6 @@ koala_bot::getCurrentPose(){
         int left_pos = atoi(data1.c_str());
         int right_pos = atoi(data2.c_str());
 
-     //   pose_msg_.position = 0.5*(0.045*(left_pos + right_pos))/1000;
-     //   pose_msg_.heading  = (1/WHEEL_BASE)*((0.045*(left_pos-right_pos))/1000);
-
-
     }
 
     my_serial_.write("E\n");
@@ -277,12 +250,7 @@ koala_bot::getCurrentPose(){
         int left_vel = atoi(data1.c_str());
         int right_vel = atoi(data2.c_str());
 
-      //  pose_msg_.velocity = 0.5*(4.5*(left_vel + right_vel))/1000;
-      //  pose_msg_.yaw_rate = (1/WHEEL_BASE)*((4.5*(left_vel-right_vel))/1000);
-
     }
-
-    //pose_pub_.publish(pose_msg_);
 
 }
 
@@ -310,8 +278,6 @@ koala_bot::getStatus(){
             data[i]=atoi(dat.c_str());
 
         }
-
-        clock_gettime(CLOCK_MONOTONIC,&current_time_);
 
         std_msgs::Float32MultiArray msg;
 
@@ -362,14 +328,11 @@ void koala_bot::readProximitySensors(){
         if(result.size()>15){
             prox_pub_.publish(prox_msg);
         }
-      //  pose_msg_.velocity = 0.5*(4.5*(left_vel + right_vel))/1000;
-      //  pose_msg_.yaw_rate = (1/WHEEL_BASE)*((4.5*(left_vel-right_vel))/1000);
 
-    }
-
-    
+    }    
     
 }
+
 void koala_bot::readLightSensors(){}
 void koala_bot::read_ADC(int channel){}
 
@@ -379,19 +342,19 @@ void koala_bot::velCmdCallBack(const geometry_msgs::Twist &msg){
     float yaw_rate;
 
     //Saturate Commanded Speed
-    if(msg.linear.x > MAX_SPEED){
-        velocity = MAX_SPEED;
-    }else if(msg.linear.x < -MAX_SPEED){
-        velocity = -MAX_SPEED;
+    if(msg.linear.x > max_speed){
+        velocity = max_speed;
+    }else if(msg.linear.x < -max_speed){
+        velocity = -max_speed;
     }else{
         velocity = msg.linear.x;
     }
 
     //Saturate Commanded Yaw Rate
-    if(msg.angular.z > MAX_YAW_RATE){
-        yaw_rate = MAX_YAW_RATE;
-    }else if(msg.angular.z < -MAX_YAW_RATE){
-        yaw_rate = -MAX_YAW_RATE;
+    if(msg.angular.z > max_yawrate){
+        yaw_rate = max_yawrate;
+    }else if(msg.angular.z < -max_yawrate){
+        yaw_rate = -max_yawrate;
     }else{
         yaw_rate = msg.angular.z;
     }
@@ -402,9 +365,6 @@ void koala_bot::velCmdCallBack(const geometry_msgs::Twist &msg){
     printf("Left Cmd: %d ; Right Cmd: %d\n",speed_L,speed_R);
 
     setSpeed(speed_L,speed_R);
-
-
-
 }
 
 void koala_bot::joyCmdCallBack(const sensor_msgs::Joy &joy_msg){
@@ -423,39 +383,9 @@ void koala_bot::joyCmdCallBack(const sensor_msgs::Joy &joy_msg){
 
     if(BA_){
         printf("toggle\n");
-        dual_drive_= !dual_drive_;
+        armed= !armed;
     }
 
-    if(dual_drive_){
-        speed_L_ = LY_*100;
-        speed_R_ = RY_*100;
-    }
-    else{
-
-    double yaw_rate = (RX_*(0.5*MAX_YAW_RATE));
-    double velocity = (RY_*(0.5*MAX_SPEED));
-   // float yaw_rate = (RX_*(0.5*MAX_YAW_RATE + 0.1*MAX_YAW_RATE*boost));
-   // float velocity = (RY_*(0.5*MAX_SPEED + 0.1*MAX_SPEED*boost));
-
-        speed_L_ = int ((yaw_rate*WHEEL_BASE + velocity)*(1000/4.5)); //Calculate desired wheel velocities and convert to
-        speed_R_ = int ((-yaw_rate*WHEEL_BASE + velocity)*(1000/4.5));
-    }
-
-    if(speed_L_<-99)
-        speed_L_=-99;
-
-    if(speed_R_<-99)
-        speed_R_=-99;
-
-   // printf("Dual Drive %d Left Speed: %d ; Right Speed: %d\n",dual_drive_,speed_L_, speed_R_);
-
-    setSpeed(speed_L_,speed_R_);
 }
 
 
-int diff_ms(timespec curr, timespec prev){
-
-    int ms = (curr.tv_sec - prev.tv_sec)*1000 + (curr.tv_nsec - prev.tv_nsec)/100000;
-
-    return ms;
-}
